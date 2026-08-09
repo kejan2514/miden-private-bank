@@ -1,0 +1,4 @@
+import * as MidenSDK from '@miden-sdk/miden-sdk';
+export const MIDEN_RPC='https://rpc.testnet.miden.io';
+export async function connectMiden(){const WebClient=MidenSDK.WebClient;if(!WebClient)throw new Error('WebClient is not exported by this SDK build');let client;if(typeof WebClient.createClient==='function')client=await WebClient.createClient(MIDEN_RPC);else if(typeof WebClient.new==='function')client=await WebClient.new(MIDEN_RPC);else client=new WebClient(MIDEN_RPC);if(client?.syncState)await client.syncState();return client;}
+export async function createLocalAccount(client){if(!client)throw new Error('Connect to Testnet first');const candidates=['newWallet','createAccount','newAccount'];for(const name of candidates){if(typeof client[name]==='function')return await client[name]();}throw new Error('Account creation API differs in the installed SDK version; connection is healthy but account creation needs an SDK-specific adapter.');}
