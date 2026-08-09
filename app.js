@@ -1,106 +1,11 @@
-const DEFAULT_ACTIVITY = [
-  { type: 'Deposit', amount: 250, detail: 'Deposit note consumed by private-bank.demo', time: '2 min ago' },
-  { type: 'Deposit', amount: 500, detail: 'Deposit note consumed by private-bank.demo', time: '18 min ago' },
-  { type: 'Withdraw', amount: 100, detail: 'Withdrawal request produced an output note', time: '41 min ago' },
-  { type: 'Deposit', amount: 600, detail: 'Deposit note consumed by private-bank.demo', time: '1 hr ago' }
-];
-
-let mode = 'deposit';
-let balance = 1250;
-let deposits = 3;
-let withdrawals = 1;
-let activity = [...DEFAULT_ACTIVITY];
-
-const balanceMetric = document.querySelector('#balanceMetric');
-const depositMetric = document.querySelector('#depositMetric');
-const withdrawMetric = document.querySelector('#withdrawMetric');
-const activityList = document.querySelector('#activityList');
-const bankForm = document.querySelector('#bankForm');
-const amountInput = document.querySelector('#amount');
-const recipientInput = document.querySelector('#recipient');
-const submitButton = bankForm.querySelector('button[type="submit"]');
-
-function renderMetrics() {
-  balanceMetric.textContent = balance.toLocaleString('en-US');
-  depositMetric.textContent = deposits;
-  withdrawMetric.textContent = withdrawals;
-}
-
-function renderActivity() {
-  activityList.innerHTML = activity.map((item) => {
-    const icon = item.type === 'Deposit' ? '↓' : '↑';
-    const sign = item.type === 'Deposit' ? '+' : '-';
-    return `
-      <div class="activity">
-        <div class="activity-icon">${icon}</div>
-        <div>
-          <strong>${item.type} · ${sign}${Number(item.amount).toLocaleString('en-US')} units</strong>
-          <small>${item.detail}</small>
-        </div>
-        <time>${item.time}</time>
-      </div>`;
-  }).join('');
-}
-
-function setMode(nextMode) {
-  mode = nextMode;
-  document.querySelectorAll('.tab').forEach((tab) => {
-    tab.classList.toggle('active', tab.dataset.tab === mode);
-  });
-  submitButton.textContent = mode === 'deposit' ? 'Generate deposit note' : 'Generate withdrawal request';
-}
-
-document.querySelectorAll('.tab').forEach((tab) => {
-  tab.addEventListener('click', () => setMode(tab.dataset.tab));
-});
-
-bankForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const amount = Number(amountInput.value);
-  const recipient = recipientInput.value.trim() || 'private-bank.demo';
-  if (!Number.isFinite(amount) || amount <= 0) return;
-
-  if (mode === 'withdraw' && amount > balance) {
-    submitButton.textContent = 'Insufficient demo balance';
-    setTimeout(() => setMode('withdraw'), 1200);
-    return;
-  }
-
-  if (mode === 'deposit') {
-    balance += amount;
-    deposits += 1;
-    activity.unshift({
-      type: 'Deposit',
-      amount,
-      detail: `Deposit note prepared for ${recipient}`,
-      time: 'just now'
-    });
-  } else {
-    balance -= amount;
-    withdrawals += 1;
-    activity.unshift({
-      type: 'Withdraw',
-      amount,
-      detail: `Withdrawal request created for ${recipient}`,
-      time: 'just now'
-    });
-  }
-
-  renderMetrics();
-  renderActivity();
-  amountInput.value = '100';
-});
-
-document.querySelector('#clearActivity').addEventListener('click', () => {
-  mode = 'deposit';
-  balance = 1250;
-  deposits = 3;
-  withdrawals = 1;
-  activity = [...DEFAULT_ACTIVITY];
-  setMode('deposit');
-  renderMetrics();
-  renderActivity();
-});
-
-renderMetrics();
-renderActivity();
+const DEFAULT_ACTIVITY=[{type:'Deposit',amount:250,note:'MIDEN-A91C',detail:'Deposit note consumed by private-bank.demo',time:'2 min ago'},{type:'Deposit',amount:500,note:'MIDEN-44BE',detail:'Deposit note consumed by private-bank.demo',time:'18 min ago'},{type:'Withdraw',amount:100,note:'MIDEN-7F3A',detail:'Withdrawal request produced an output note',time:'41 min ago'},{type:'Deposit',amount:600,note:'MIDEN-21D8',detail:'Deposit note consumed by private-bank.demo',time:'1 hr ago'}];
+let mode='deposit',balance=1250,deposits=3,withdrawals=1,activity=[...DEFAULT_ACTIVITY],filter='All';
+const $=s=>document.querySelector(s),balanceMetric=$('#balanceMetric'),depositMetric=$('#depositMetric'),withdrawMetric=$('#withdrawMetric'),latestNote=$('#latestNote'),activityList=$('#activityList'),bankForm=$('#bankForm'),amountInput=$('#amount'),recipientInput=$('#recipient'),submitButton=bankForm.querySelector('button[type="submit"]'),previewText=$('#previewText'),txResult=$('#txResult'),modeBadge=$('#modeBadge');
+const noteId=()=>`MIDEN-${Math.random().toString(16).slice(2,6).toUpperCase()}`;
+function renderMetrics(){balanceMetric.textContent=balance.toLocaleString();depositMetric.textContent=deposits;withdrawMetric.textContent=withdrawals;latestNote.textContent=activity[0]?.note||'—'}
+function renderActivity(){const rows=filter==='All'?activity:activity.filter(x=>x.type===filter);activityList.innerHTML=rows.length?rows.map(item=>`<div class="activity"><div class="activity-icon">${item.type==='Deposit'?'↓':'↑'}</div><div><div class="activity-title"><strong>${item.type} · ${item.type==='Deposit'?'+':'-'}${item.amount.toLocaleString()} units</strong><code>${item.note}</code></div><small>${item.detail}</small></div><time>${item.time}</time></div>`).join(''):'<div class="empty">No notes in this filter.</div>'}
+function updatePreview(){const amount=Number(amountInput.value)||0,recipient=recipientInput.value.trim()||'private-bank.demo';previewText.textContent=`${mode==='deposit'?'+':'-'}${amount.toLocaleString()} units → ${recipient}`}
+function setMode(next){mode=next;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===mode));submitButton.textContent=mode==='deposit'?'Generate deposit note':'Generate withdrawal request';modeBadge.textContent=mode.toUpperCase();txResult.classList.add('hidden');updatePreview()}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.tab));document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));renderActivity()});amountInput.oninput=updatePreview;recipientInput.oninput=updatePreview;
+bankForm.addEventListener('submit',e=>{e.preventDefault();const amount=Number(amountInput.value),recipient=recipientInput.value.trim()||'private-bank.demo';if(!Number.isFinite(amount)||amount<=0)return;if(mode==='withdraw'&&amount>balance){txResult.className='tx-result error';txResult.innerHTML='<strong>Transaction rejected</strong><span>Withdrawal exceeds the current demo balance.</span>';return}const id=noteId();if(mode==='deposit'){balance+=amount;deposits++;activity.unshift({type:'Deposit',amount,note:id,detail:`Deposit note prepared for ${recipient}`,time:'just now'})}else{balance-=amount;withdrawals++;activity.unshift({type:'Withdraw',amount,note:id,detail:`Withdrawal output note created for ${recipient}`,time:'just now'})}txResult.className='tx-result success';txResult.innerHTML=`<strong>${mode==='deposit'?'Deposit note created':'Withdrawal request processed'}</strong><span>Note ID: <code>${id}</code> · ${amount.toLocaleString()} units</span>`;renderMetrics();renderActivity()});
+$('#clearActivity').onclick=()=>{mode='deposit';balance=1250;deposits=3;withdrawals=1;activity=[...DEFAULT_ACTIVITY];filter='All';document.querySelectorAll('.filter').forEach((x,i)=>x.classList.toggle('active',i===0));setMode('deposit');renderMetrics();renderActivity()};setMode('deposit');renderMetrics();renderActivity();
